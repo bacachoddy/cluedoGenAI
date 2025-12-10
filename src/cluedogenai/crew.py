@@ -57,9 +57,10 @@ class Cluedogenai():
     @agent
     def director_agent(self) -> Agent:
         return Agent(
-            config=self.agents_config['character_agent'], # type: ignore[index]
+            config=self.agents_config['director_agent'],  # <- corregido
             verbose=True
         )
+
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
@@ -74,47 +75,74 @@ class Cluedogenai():
     def define_characters(self) -> Task:
         return Task(
             config=self.tasks_config['define_characters'], # type: ignore[index]
-            output_file='report.md'
+            #output_file='report.md'
         )
     
     @task
     def generate_suspect_dialogue(self) -> Task:
         return Task(
             config=self.tasks_config['generate_suspect_dialogue'], # type: ignore[index]
-            output_file='report.md'
+            #output_file='report.md'
         )
     
     @task
     def design_scene_visuals(self) -> Task:
         return Task(
             config=self.tasks_config['design_scene_visuals'], # type: ignore[index]
-            output_file='report.md'
+            #output_file='report.md'
         )
     
     @task
     def curate_scene_audio(self) -> Task: # Delete if we delete this agent
         return Task(
             config=self.tasks_config['curate_scene_audio'], # type: ignore[index]
-            output_file='report.md'
+            #output_file='report.md'
         )
     
     @task
     def game_play_director_step(self) -> Task:
         return Task(
             config=self.tasks_config['game_play_director_step'], # type: ignore[index]
-            output_file='report.md'
+            #output_file='report.md'
         )
 
     @crew
-    def crew(self) -> Crew:
-        """Creates the Cluedogenai crew"""
-        # To learn how to add knowledge sources to your crew, check out the documentation:
-        # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
-
+    def setup_crew(self) -> Crew:
+        """Crew solo para generar la escena inicial y los sospechosos."""
         return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
+            agents=[
+                self.narrative_agent(),
+                self.character_agent(),
+            ],
+            tasks=[
+                self.create_scene_blueprint(),
+                self.define_characters(),
+            ],
             process=Process.sequential,
             verbose=True,
-            # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
+        )
+
+    @crew
+    def dialogue_crew(self) -> Crew:
+        """Crew rápido: solo genera la respuesta del sospechoso."""
+        return Crew(
+            agents=[
+                self.dialogue_agent(),
+            ],
+            tasks=[
+                self.generate_suspect_dialogue(),
+            ],
+            process=Process.sequential,
+            verbose=False,  # menos ruido en consola
+        )
+
+
+    # Si quieres, puedes dejar la crew “grande” tal cual para tests manuales:
+    @crew
+    def full_crew(self) -> Crew:
+        return Crew(
+            agents=self.agents,
+            tasks=self.tasks,
+            process=Process.sequential,
+            verbose=True,
         )
